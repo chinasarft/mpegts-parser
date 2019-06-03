@@ -4,6 +4,22 @@
 #define TS_MAX_STREAMS 8
 #define TS_MAX_PMT 4
 
+typedef enum {
+    TsTypeH264 = 0x1b,
+    TsTypeH265 = 0x24,
+    TsTypeAAC = 0x0f,
+    TsTypePrivate = 0x06
+}TsStreamType;
+
+typedef struct {
+    int64_t nPts;
+    uint16_t PID;
+    const uint8_t* pData;
+    int nDataLen;
+    TsStreamType stype;
+}TsParsedFrame;
+
+
 typedef struct TsHeader {
     uint8_t sync_byte;
     uint8_t transport_error_indicator;
@@ -42,6 +58,10 @@ typedef struct Pes {
     TsAdaptationField adpt_fld;
     uint8_t isParseStart;
     uint32_t parsedLength;
+    int pesHdrLen;
+    uint8_t* pData;
+    int nDataLen;
+    int nDataCap;
 }Pes;
 
 
@@ -105,4 +125,5 @@ typedef struct MpegTs {
     TsPAT pat;
     TsPMT pmt[TS_MAX_PMT];
     Pes pes[TS_MAX_STREAMS];
+    int lastParsedPesIdx;
 }MpegTs;

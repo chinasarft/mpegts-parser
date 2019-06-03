@@ -1,10 +1,11 @@
 #include "bitreader.h"
-#include "table.h"
+#include "parse.h"
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 // CRC32 lookup table for polynomial 0x04c11db7
 static uint32_t crc_table[256] = {
@@ -277,13 +278,57 @@ static int parse_pes_header(BitReader* pBitReader, Pes* pPes) {
     }
     pPes->isParseStart = 1;
     pPes->parsedLength = 8;
-    
+    pPes->pesHdrLen = 8;
     // TODO pts后面就是数据了，复杂格式的后面再说
     return 0;
 }
 
-int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen) {
+static void fill_frame(Pes* pPes, TsParsedFrame* pFrame, uint8_t stype) {
+    pFrame->pData = pPes->pData;
+    pFrame->nDataLen = pPes->nDataLen;
+    pFrame->stype = stype;
+    pFrame->PID = pPes->hdr.PID;
+    pFrame->nPts = pPes->pesHdr.pts;
+}
+
+static void get_pes(MpegTs *pTs, const TsPMT* pPmt, int idx, TsParsedFrame pFrames[2]) {
+    Pes* pPes = &pTs->pes[idx];
+    uint8_t stype;
+    if (pPes->nDataLen > 0) {
+        stype = get_stream_type_by_pid(pPmt, pPes->hdr.PID);
+        const char *typeName = get_name_by_stream_type(stype);
+        printf("%8s pts:%"PRId64" millisec:%.3f pesLen:%d\n", typeName, pPes->pesHdr.pts, 
+            pPes->pesHdr.pts/90000.0, pPes->pesHdr.PES_packet_length);
+    } else {
+        return;
+    }
+
+    if (pFrames == NULL)
+        return;
+    for(int i = 0; i < 2; i ++) {
+        if (pFrames[i].pData == NULL) {
+           fill_frame(pPes, &pFrames[i], stype);
+           break;
+        }
+    }
+    
+    return;
+}
+
+void ts_init(MpegTs *pTs) {
+    if (pTs) {
+        memset(pTs, 0, sizeof(MpegTs));
+    }
+    return;
+}
+
+int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFrames[2]) {
     assert(nDataLen == 188 && pData != NULL);
+    if (pFrames) {
+        if (pFrames != NULL)
+            memset(pFrames, 0, sizeof(TsParsedFrame)*2);
+    }
+        
 
     BitReader bitReader;
     InitBitReader(&bitReader, pData, nDataLen);
@@ -377,16 +422,23 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen) {
     if (is_pes_pid(pTs, hdr.PID, &pPmt)) {
         Pes *pPes = NULL;
 
+        int currentIdx = 0;
         for (int i = 0; i < TS_MAX_STREAMS; i++) {
             if (pTs->pes[i].hdr.PID == 0) {
                 pPes = &pTs->pes[i];
+                currentIdx = i;
                 break;
             }
             if (pTs->pes[i].hdr.PID == hdr.PID) {
                 pPes = &pTs->pes[i];
+                currentIdx = i;
                 break;
             }
         }
+        if (pTs->pes[pTs->lastParsedPesIdx].hdr.PID != 0 && pTs->lastParsedPesIdx != currentIdx) {
+            get_pes(pTs, pPmt, pTs->lastParsedPesIdx, pFrames);
+        }
+        pTs->lastParsedPesIdx = currentIdx;
 
         if (pPes->hdr.PID != 0) {
             if (!check_continuity_counter(pPes->hdr.continuity_counter, hdr.continuity_counter)) {
@@ -403,21 +455,66 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen) {
                     printf("length error:%d %d", pPes->pesHdr.PES_packet_length, pPes->parsedLength);
                 }        
             }
+            
             pPes->isParseStart = 0;
             pPes->parsedLength = 0;
             parse_pes_header(&bitReader, pPes);
-
+#if 0
             uint8_t stype = get_stream_type_by_pid(pPmt, hdr.PID);
             const char *typeName = get_name_by_stream_type(stype);
             printf("%8s pts:%"PRId64" millisec:%.3f pesLen:%d\n", typeName, pPes->pesHdr.pts, 
                     pPes->pesHdr.pts/90000.0, pPes->pesHdr.PES_packet_length);
-
+#endif
+            int allocLen = pPes->pesHdr.PES_packet_length * 1.5;
+            if (allocLen == 0) {
+                allocLen = 200*1024; 
+            } 
+            if (pPes->nDataCap < allocLen) {
+                if (pPes->pData == NULL)
+                    free((char *)pPes->pData);
+                pPes->pData = malloc(allocLen);
+                pPes->nDataCap = allocLen;
+                pPes->nDataLen = 0;
+            }
         }
 
-        // TODO parse pes data
         int pesRemain = numBitsLeft(&bitReader) / 8;
+
+        if (pesRemain + pPes->nDataLen > pPes->nDataCap) {
+                int reAllocLen = pPes->nDataCap*1.3;
+                pPes->pData = (uint8_t *)realloc((char *)pPes->pData, reAllocLen);
+                pPes->nDataCap = reAllocLen;
+        }
+        memcpy(pPes->pData+pPes->nDataLen, pData+(188-pesRemain), pesRemain);
+        pPes->nDataLen += pesRemain;
+
         pPes->parsedLength += pesRemain;
+        if (pPes->parsedLength == pPes->pesHdr.PES_packet_length) {
+            get_pes(pTs, pPmt, currentIdx, pFrames);
+            pPes->nDataLen = 0;
+        }
     }
 
     return 1;
+}
+
+int ts_flush(MpegTs *pTs, TsParsedFrame* pFrame) {
+
+    const TsPMT *pPmt = NULL;
+    int idx = pTs->lastParsedPesIdx;
+    if (is_pes_pid(pTs, pTs->pes[idx].hdr.PID, &pPmt)) {
+        uint8_t stype = get_stream_type_by_pid(pPmt, pTs->pes[idx].hdr.PID);
+        fill_frame(&pTs->pes[idx], pFrame, stype);
+    }
+    return 0;
+}
+
+void ts_clean(MpegTs *pTs) {
+    for (int i = 0; i < TS_MAX_STREAMS; i++) {
+        if (pTs->pes[i].pData == 0) {
+            free((char *)pTs->pes[i].pData);
+        }
+    }
+    memset(pTs, 0, sizeof(MpegTs));
+    return;
 }

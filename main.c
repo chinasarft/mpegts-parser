@@ -9,7 +9,55 @@
 
 #include "parse.h"
 
+typedef struct {
+	const char *pVideoOut;
+	FILE* pVFile;
+	const char *pAudioOut;
+	FILE* pAFile;
+}CmdArg;
+CmdArg arg;
 
+static void usage(int argc, char **argv) {
+	printf("usage as:%s tsfilename [options]", argv[0]);
+	printf("options are:");
+	printf("\t[-af afileout] audio stream out\n");
+	printf("\t[-vf vfileout] video stream out\n");
+}
+
+static void writeFrames(TsParsedFrame pFrames[2]) {
+	if (pFrames == NULL)
+		return;
+	for(int i = 0; i < 2; i++) {
+		if (pFrames[i].pData == NULL)
+			continue;
+		switch (pFrames[i].stype)
+		{
+		case TsTypeH264:
+		case TsTypeH265:
+			if (arg.pVFile == NULL) {
+				arg.pVFile = fopen(arg.pVideoOut, "w");
+			}
+			if (arg.pVFile) {
+				fwrite(pFrames[i].pData, 1, pFrames[i].nDataLen, arg.pVFile);
+			}
+			break;
+
+		case TsTypePrivate:
+			if (arg.pAFile == NULL) {
+				arg.pAFile = fopen(arg.pAudioOut, "w");
+			}
+			if (arg.pAFile) {
+				fwrite(pFrames[i].pData, 1, pFrames[i].nDataLen, arg.pAFile);
+			}
+			break;
+			
+		default:
+			break;
+		}
+		
+		
+	}
+}
 
 int main(int argc, char **argv) {
 	int fd, bytes_read;
@@ -17,10 +65,14 @@ int main(int argc, char **argv) {
 	int n_packets = 0;
 
 	MpegTs tsParser;
-	memset(&tsParser, 0, sizeof(tsParser));
+	ts_init(&tsParser);
+
 	if (argc < 2) {
-		printf("usage as:%s tsfilename", argv[0]);
+		usage(argc, argv);
 		return -1;
+	} else if(memcmp(argv[1], "-h", 2) == 0) {
+		usage(argc, argv);
+		return 0;
 	}
 
 	fd = open(argv[1], O_RDONLY);
@@ -28,6 +80,15 @@ int main(int argc, char **argv) {
 	{
 		printf("Error opening the stream\nSyntax: tsunpacket FileToParse.ts\n");
 		return -1;
+	}
+	for(int i = 2; i < argc;) {
+		if(memcmp(argv[i], "-af", 3) == 0) {
+			arg.pAudioOut = argv[++i];
+		} else if(memcmp(argv[i], "-vf", 3) == 0) {
+			arg.pVideoOut = argv[++i];
+		} else {
+			i++;
+		}
 	}
 
 	// Parse file while we can read full TS packets
@@ -39,15 +100,23 @@ int main(int argc, char **argv) {
 			printf("End of file!\n");
 			break;
 		}
-
-		ts_parse_buffer(&tsParser, packet_buffer, bytes_read);
+		TsParsedFrame frames[2];
+		ts_parse_buffer(&tsParser, packet_buffer, bytes_read, frames);
 		n_packets++;
+		writeFrames(frames);
 	}
 
 	printf("Number of packets found: %d\n", n_packets);
 
 	// Freeing resources
 	close(fd);
+
+	if (arg.pAFile) {
+		fclose(arg.pAFile);
+	}
+	if (arg.pVFile) {
+		fclose(arg.pVFile);
+	}
 
 	return 0;
 
