@@ -5,9 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "bitreader.h"
-
-#include "parse.h"
+#include "tsparser.h"
 
 typedef struct {
 	const char *pVideoOut;

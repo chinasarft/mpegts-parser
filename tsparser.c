@@ -1,5 +1,5 @@
 #include "bitreader.h"
-#include "parse.h"
+#include "tsparser.h"
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>

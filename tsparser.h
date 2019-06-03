@@ -3,6 +3,7 @@
 #define TS_MAX_STREAM_DESCRIPTOR 16
 #define TS_MAX_STREAMS 8
 #define TS_MAX_PMT 4
+#define TS_PACKET_SIZE 188
 
 typedef enum {
     TsTypeH264 = 0x1b,
@@ -127,3 +128,11 @@ typedef struct MpegTs {
     Pes pes[TS_MAX_STREAMS];
     int lastParsedPesIdx;
 }MpegTs;
+
+void ts_init(MpegTs *pTs);
+int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFrames[2]);
+
+// 最后一个pes可能由于没有长度信息，需要调用该函数才能获取
+int ts_flush(MpegTs *pTs, TsParsedFrame* pFrame);
+
+void ts_clean(MpegTs *pTs);

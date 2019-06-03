@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-c -g
 LDFLAGS=
-SOURCES=main.c parse.c bitreader.c
+SOURCES=main.c tsparser.c bitreader.c
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=tsparser
 
