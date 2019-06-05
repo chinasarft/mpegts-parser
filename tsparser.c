@@ -288,7 +288,7 @@ static void fill_frame(Pes* pPes, TsParsedFrame* pFrame, uint8_t stype) {
     pFrame->nDataLen = pPes->nDataLen;
     pFrame->stype = stype;
     pFrame->PID = pPes->hdr.PID;
-    pFrame->nPts = pPes->pesHdr.pts;
+    pFrame->nPts = pPes->pesHdr.pts/90;
 }
 
 static void get_pes(MpegTs *pTs, const TsPMT* pPmt, int idx, TsParsedFrame pFrames[2]) {

@@ -7,6 +7,8 @@ list(APPEND SRCS_${CURRENT_TARGET} "bitreader.c")
 list(APPEND SRCS_${CURRENT_TARGET} "bitreader.h")
 list(APPEND SRCS_${CURRENT_TARGET} "tsparser.c")
 list(APPEND SRCS_${CURRENT_TARGET} "tsparser.h")
+list(APPEND SRCS_${CURRENT_TARGET} "inctime.c")
+list(APPEND SRCS_${CURRENT_TARGET} "inctime.h")
 
 foreach(f IN LISTS SRCS_${CURRENT_TARGET})
   get_filename_component(b ${f} NAME)
