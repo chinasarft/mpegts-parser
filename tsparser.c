@@ -459,12 +459,7 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
             pPes->isParseStart = 0;
             pPes->parsedLength = 0;
             parse_pes_header(&bitReader, pPes);
-#if 0
-            uint8_t stype = get_stream_type_by_pid(pPmt, hdr.PID);
-            const char *typeName = get_name_by_stream_type(stype);
-            printf("%8s pts:%"PRId64" millisec:%.3f pesLen:%d\n", typeName, pPes->pesHdr.pts, 
-                    pPes->pesHdr.pts/90000.0, pPes->pesHdr.PES_packet_length);
-#endif
+
             int allocLen = pPes->pesHdr.PES_packet_length * 1.5;
             if (allocLen == 0) {
                 allocLen = 200*1024; 
@@ -499,12 +494,17 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
 }
 
 int ts_flush(MpegTs *pTs, TsParsedFrame* pFrame) {
-
+    if(pFrame == NULL)
+        return -1;
+    memset(pFrame, 0, sizeof(TsParsedFrame));
     const TsPMT *pPmt = NULL;
     int idx = pTs->lastParsedPesIdx;
     if (is_pes_pid(pTs, pTs->pes[idx].hdr.PID, &pPmt)) {
-        uint8_t stype = get_stream_type_by_pid(pPmt, pTs->pes[idx].hdr.PID);
-        fill_frame(&pTs->pes[idx], pFrame, stype);
+        if (pTs->pes[idx].nDataLen > 0) {
+            uint8_t stype = get_stream_type_by_pid(pPmt, pTs->pes[idx].hdr.PID);
+            fill_frame(&pTs->pes[idx], pFrame, stype);
+            return 1;
+        }
     }
     return 0;
 }

@@ -22,13 +22,8 @@ static void usage(int argc, char **argv) {
 	printf("\t[-vf vfileout] video stream out\n");
 }
 
-static void writeFrames(TsParsedFrame pFrames[2]) {
-	if (pFrames == NULL)
-		return;
-	for(int i = 0; i < 2; i++) {
-		if (pFrames[i].pData == NULL)
-			continue;
-		switch (pFrames[i].stype)
+static void writeFrame(TsParsedFrame *pFrame) {
+	switch (pFrame->stype)
 		{
 		case TsTypeH264:
 		case TsTypeH265:
@@ -36,24 +31,32 @@ static void writeFrames(TsParsedFrame pFrames[2]) {
 				arg.pVFile = fopen(arg.pVideoOut, "w");
 			}
 			if (arg.pVFile) {
-				fwrite(pFrames[i].pData, 1, pFrames[i].nDataLen, arg.pVFile);
+				fwrite(pFrame->pData, 1, pFrame->nDataLen, arg.pVFile);
 			}
 			break;
 
 		case TsTypePrivate:
+		case TsTypeAAC:
 			if (arg.pAFile == NULL) {
 				arg.pAFile = fopen(arg.pAudioOut, "w");
 			}
 			if (arg.pAFile) {
-				fwrite(pFrames[i].pData, 1, pFrames[i].nDataLen, arg.pAFile);
+				fwrite(pFrame->pData, 1, pFrame->nDataLen, arg.pAFile);
 			}
 			break;
+
 			
 		default:
 			break;
 		}
-		
-		
+}
+static void writeFrames(TsParsedFrame pFrames[2]) {
+	if (pFrames == NULL)
+		return;
+	for(int i = 0; i < 2; i++) {
+		if (pFrames[i].pData == NULL)
+			continue;
+		writeFrame(&pFrames[i]);
 	}
 }
 
@@ -106,6 +109,12 @@ int main(int argc, char **argv) {
 
 	printf("Number of packets found: %d\n", n_packets);
 
+	TsParsedFrame fFrame;
+	if (ts_flush(&tsParser, &fFrame) > 0) {
+		printf("flush one frame\n");
+		writeFrames(&fFrame);
+	}
+
 	// Freeing resources
 	close(fd);
 
@@ -115,6 +124,8 @@ int main(int argc, char **argv) {
 	if (arg.pVFile) {
 		fclose(arg.pVFile);
 	}
+
+	ts_clean(&tsParser);
 
 	return 0;
 
