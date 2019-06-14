@@ -1,11 +1,9 @@
 #include "bitreader.h"
 
-void fillReservoir(BitReader *bitReader)
-{
+static void fillReservoir(BitReader *bitReader) {
 	bitReader->mReservoir = 0;
   size_t i;
-  for (i = 0; bitReader->mSize > 0 && i < 4; ++i)
-	{
+  for (i = 0; bitReader->mSize > 0 && i < 4; ++i) {
     bitReader->mReservoir = (bitReader->mReservoir << 8) | *(bitReader->mData);
 
     ++bitReader->mData;
@@ -13,14 +11,8 @@ void fillReservoir(BitReader *bitReader)
   }
 
   bitReader->mNumBitsLeft = 8 * i;
+  // not enough for 4 byte should mv the lowbit to highbit
   bitReader->mReservoir <<= 32 - bitReader->mNumBitsLeft;
-}
-
-void putBits(BitReader *bitReader, uint32_t x, size_t n)
-{
-	bitReader->mReservoir = (bitReader->mReservoir >> n) | (x << (32 - n));
-  bitReader->mNumBitsLeft += n;
-
 }
 
 void InitBitReader(BitReader *bitReader, uint8_t *data, size_t size)
@@ -34,16 +26,17 @@ void InitBitReader(BitReader *bitReader, uint8_t *data, size_t size)
 uint32_t GetBits(BitReader *bitReader, size_t n)
 {
 	uint32_t result = 0;
-  while (n > 0)
-	{
-    if (bitReader->mNumBitsLeft == 0)
-		{
+  while (n > 0) {
+    if (bitReader->mNumBitsLeft == 0) {
       fillReservoir(bitReader);
+    }
+    if (bitReader->mNumBitsLeft == 0) {
+      bitReader->isInsufficient = 1;
+      return result;
     }
 
     size_t m = n;
-    if (m > bitReader->mNumBitsLeft)
-		{
+    if (m > bitReader->mNumBitsLeft) {
       m = bitReader->mNumBitsLeft;
     }
 
@@ -56,22 +49,27 @@ uint32_t GetBits(BitReader *bitReader, size_t n)
   return result;
 }
 
-void SkipBits(BitReader *bitReader, size_t n)
-{
-	while (n > 32)
-	{
+uint64_t GetBits64(BitReader *bitReader, size_t n) {
+  if (n <= 32) {
+    return (uint64_t)GetBits(bitReader, n);
+  }
+  uint64_t pre = (uint64_t)GetBits(bitReader, 32);
+  uint64_t suf = (uint64_t)GetBits(bitReader, n-32);
+  return pre<<(n-32) | suf;
+}
+
+void SkipBits(BitReader *bitReader, size_t n) {
+	while (n > 32) {
     GetBits(bitReader, 32);
     n -= 32;
   }
 
-  if (n > 0)
-	{
+  if (n > 0) {
     GetBits(bitReader, n);
   }
 }
 
-size_t numBitsLeft(BitReader *bitReader)
-{
+size_t NumBitsLeft(BitReader *bitReader) {
 	return bitReader->mSize * 8 + bitReader->mNumBitsLeft;
 }
 

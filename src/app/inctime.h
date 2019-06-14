@@ -11,6 +11,7 @@ typedef struct {
     uint8_t bFisrt;
 }LinkIncTime;
 
+void InitLinkIncTime(LinkIncTime*);
 int64_t GetAudioPts(LinkIncTime* pInc, int64_t nOriginPts);
 int64_t GetVideoPts(LinkIncTime* pInc, int64_t nOriginPts);
 void SetSeekFlag(LinkIncTime* pInc);

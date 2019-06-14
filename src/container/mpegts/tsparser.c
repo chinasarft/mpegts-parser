@@ -344,7 +344,7 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
             SkipBits(&bitReader, pointerField.len * 8);
         }
     } 
-    int left = numBitsLeft(&bitReader) / 8;
+    int left = NumBitsLeft(&bitReader) / 8;
     int crcstart = nDataLen - left;
 
     TsAdaptationField adaptField = {0, 0};
@@ -369,7 +369,7 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
         parse_pat(&bitReader, &pTs->pat);
         pTs->isParsedPat = 1;
 
-        int crcend = nDataLen - numBitsLeft(&bitReader) / 8;
+        int crcend = nDataLen - NumBitsLeft(&bitReader) / 8;
         // -1, section_length 包含4bitcrc32, 以及不包含包括section_length在内的3个bit, 所以-1
         if (check_crc32(pData+crcstart, pTs->pat.section_length-1, pData+crcend) != 0) {
             printf("pat crc32 error\n");
@@ -399,7 +399,7 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
         pPmt->hdr = hdr;
         pPmt->poiter_field = pointerField;
         pPmt->adpt_fld = adaptField;
-        int crcend = nDataLen - numBitsLeft(&bitReader) / 8;
+        int crcend = nDataLen - NumBitsLeft(&bitReader) / 8;
         if (check_crc32(pData+crcstart, crcend - crcstart, pData+crcend) != 0) {
             printf("pmt crc32 error\n");
         }
@@ -473,7 +473,7 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
             }
         }
 
-        int pesRemain = numBitsLeft(&bitReader) / 8;
+        int pesRemain = NumBitsLeft(&bitReader) / 8;
 
         if (pesRemain + pPes->nDataLen > pPes->nDataCap) {
                 int reAllocLen = pPes->nDataCap*1.3;
