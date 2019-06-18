@@ -5,6 +5,10 @@
 #define TS_MAX_PMT 4
 #define TS_PACKET_SIZE 188
 
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C"{
+#endif
+
 typedef enum {
     TsTypeH264 = 0x1b,
     TsTypeH265 = 0x24,
@@ -136,3 +140,7 @@ int ts_parse_buffer(MpegTs *pTs, uint8_t* pData, int nDataLen, TsParsedFrame pFr
 int ts_flush(MpegTs *pTs, TsParsedFrame* pFrame);
 
 void ts_clean(MpegTs *pTs);
+    
+#if defined(__cplusplus) || defined(c_plusplus)
+}
+#endif

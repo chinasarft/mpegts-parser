@@ -10,4 +10,5 @@ endif()
 
 add_subdirectory(src/tools)
 add_subdirectory(src/container/mpegts)
+add_subdirectory(src/container/flv)
 add_subdirectory(src/app)

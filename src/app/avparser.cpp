@@ -1,12 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 
-#include "tsparser.h"
+#include "mpegts/tsparser.h"
+#include "flv/flvparser.h"
 #include "inctime.h"
 
 typedef struct
@@ -21,7 +22,7 @@ LinkIncTime inctime;
 
 static void usage(int argc, char **argv)
 {
-	printf("usage as:%s [options] tsfilename", argv[0]);
+    printf("usage as:%s {flv|ts} [options] tsfilename", argv[0]);
 	printf("options are:");
 	printf("\t[-af afileout] audio stream out\n");
 	printf("\t[-vf vfileout] video stream out\n");
@@ -73,7 +74,7 @@ static void writeFrames(TsParsedFrame pFrames[2])
 	}
 }
 
-int main(int argc, char **argv)
+static int parsets(int argc, char **argv)
 {
 	int fd, bytes_read;
 	uint8_t packet_buffer[TS_PACKET_SIZE];
@@ -83,17 +84,9 @@ int main(int argc, char **argv)
 	ts_init(&tsParser);
 
 	InitLinkIncTime(&inctime);
-
-	if (argc < 2) {
-		usage(argc, argv);
-		return -1;
-	} else if (memcmp(argv[1], "-h", 2) == 0){
-		usage(argc, argv);
-		return 0;
-	}
-
+    
 	int inputIdx = 1;
-	for (int i = 1; i < argc;){
+	for (int i = 2; i < argc;){
 		if (memcmp(argv[i], "-af", 3) == 0) {
 			arg.pAudioOut = argv[++i];
 			inputIdx = i + 1;
@@ -149,4 +142,37 @@ int main(int argc, char **argv)
 	ts_clean(&tsParser);
 
 	return 0;
+}
+
+static void parseflv(int argc, char **argv) {
+    AVD::Flv flv;
+    std::string fname(argv[2]);
+    auto fileReader = AVD::Flv::FileReader::NewFileReader(fname);
+    if (!fileReader->IsOk()) {
+        fprintf(stderr, "open %s fail\n", argv[2]);
+        return;
+    }
+    int ret = 0;
+    if ((ret = flv.Parse(fileReader)) == AVD::Flv::OK) {
+        flv.Print();
+    } else {
+        printf("flv parse error:%d\n", ret);
+    }
+}
+
+int main(int argc, char **argv) {
+    if (argc < 3) {
+        usage(argc, argv);
+        return -1;
+    } else if (memcmp(argv[1], "-h", 2) == 0){
+        usage(argc, argv);
+        return 0;
+    }
+    
+    if (memcmp(argv[1], "flv", 3) == 0) {
+        parseflv(argc, argv);
+    } else if (memcmp(argv[1], "ts", 2) == 0) {
+        parsets(argc, argv);
+    }
+
 }
