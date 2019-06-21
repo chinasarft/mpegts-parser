@@ -1,5 +1,8 @@
 #include "bitreader.h"
-
+#include <string.h>
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C"{
+#endif
 static void fillReservoir(BitReader *bitReader) {
 	bitReader->mReservoir = 0;
   size_t i;
@@ -17,10 +20,9 @@ static void fillReservoir(BitReader *bitReader) {
 
 void InitBitReader(BitReader *bitReader, uint8_t *data, size_t size)
 {
+    memset(bitReader, 0, sizeof(BitReader));
 	bitReader->mData = data;
 	bitReader->mSize = size;
-	bitReader->mReservoir = 0;
-	bitReader->mNumBitsLeft = 0;
 }
 
 uint32_t GetBits(BitReader *bitReader, size_t n)
@@ -72,4 +74,6 @@ void SkipBits(BitReader *bitReader, size_t n) {
 size_t NumBitsLeft(BitReader *bitReader) {
 	return bitReader->mSize * 8 + bitReader->mNumBitsLeft;
 }
-
+#if defined(__cplusplus) || defined(c_plusplus)
+}
+#endif

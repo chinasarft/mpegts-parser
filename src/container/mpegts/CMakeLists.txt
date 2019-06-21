@@ -14,3 +14,16 @@ add_library(tsparser STATIC
 	tsparser.h
 	tsparser.c
 )
+
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        install(TARGETS tsparser
+                DESTINATION "${CMAKE_BINARY_DIR}/lib/Debug"
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+else()
+        install(TARGETS tsparser
+                DESTINATION "${CMAKE_BINARY_DIR}/lib/Release"
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+endif()

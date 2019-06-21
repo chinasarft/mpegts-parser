@@ -8,6 +8,7 @@ if(WIN32)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /source-charset:utf-8")
 endif()
 
+add_subdirectory(third_party/googletest)
 add_subdirectory(src/tools)
 add_subdirectory(src/container/mpegts)
 add_subdirectory(src/container/flv)

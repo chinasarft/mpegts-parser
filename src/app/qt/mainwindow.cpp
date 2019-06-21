@@ -94,6 +94,8 @@ void MainWindow::on_tableView_clicked(const QModelIndex &index)
     
     auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
     auto v = model->data(index.siblingAtColumn(0), Qt::UserRole);
+    
+    
     qDebug()<<index<<"=="<<index.row()<<"---"<<v.value<void *>();
 }
 

@@ -15,3 +15,16 @@ add_library(flvparser STATIC
 	flvparser.h
 	flvparser.cpp
 )
+
+message("----------${CMAKE_BINARY_DIR}/lib/Debug")
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        install(TARGETS flvparser
+                DESTINATION "${CMAKE_BINARY_DIR}/lib/Debug"
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+else()
+        install(TARGETS flvparser
+                DESTINATION "${CMAKE_BINARY_DIR}/lib/Release"
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+endif()
