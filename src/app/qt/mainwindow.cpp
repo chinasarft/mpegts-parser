@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDebug>
+#include <tools/hexprint.h>
 
 #include <iostream>
 
@@ -16,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->tableView->verticalHeader()->setHidden(true); // 隐藏行号
+    ui->textEdit->setReadOnly(true);
 
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setSelectionMode( QAbstractItemView::SingleSelection);
@@ -95,7 +97,7 @@ void MainWindow::on_tableView_clicked(const QModelIndex &index)
     auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
     auto v = model->data(index.siblingAtColumn(0), Qt::UserRole);
     
-    
+    showHex(index.row());
     qDebug()<<index<<"=="<<index.row()<<"---"<<v.value<void *>();
 }
 
@@ -131,4 +133,29 @@ void MainWindow::showFlv() {
         count++;
         
     }
+}
+
+void MainWindow::showHex(int idx) {
+    auto flv = flv_.GetFlv();
+    uint8_t* pData = NULL;
+    int nDataLen = 0;
+    if (idx == 0) {
+        pData = flv.first->pData;
+        nDataLen = flv.first->Pos.nSize;
+    } else {
+        auto tags = flv.second;
+        pData = tags[idx-1].pData;
+        nDataLen = tags[idx-1].Pos.nSize;
+    }
+    
+    int nBufferSize = AVD::HexSprintBufferSize(nDataLen);
+    
+    if (hexBuf_.size() <= nBufferSize) {
+        hexBuf_.resize(nBufferSize+1024*10);
+    }
+    
+    AVD::HexSprint((char *)pData, nDataLen, hexBuf_.data());
+    //ui->textEdit->clear();
+    ui->textEdit->setPlainText(hexBuf_.data());
+    return;
 }

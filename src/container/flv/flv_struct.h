@@ -19,6 +19,7 @@ namespace AVD {
         uint8_t TypeFlagsVideo:1; // 1 = Video tags are present
         uint32_t DataOffset; //The length of this header in bytes
         uint32_t PreviousTagSize;
+        uint8_t* pData;
         FlvPosition Pos;
     };
 

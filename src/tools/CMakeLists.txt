@@ -8,6 +8,8 @@ add_library(tools STATIC
 	bitreader.cpp
 	sps.h
 	parsesps.cpp
+	hexprint.cpp
+	hexprint.h
 )
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

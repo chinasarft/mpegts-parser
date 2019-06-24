@@ -27,6 +27,7 @@ endif()
 
 
 include_directories("${TOP_DIR}/src/container")
+include_directories("${TOP_DIR}/src/")
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)

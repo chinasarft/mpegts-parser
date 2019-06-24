@@ -115,6 +115,7 @@ namespace AVD {
         header_.DataOffset = beBuf2Uint32(&buf[5]);
 
         header_.Pos.nSize = FlvHeaderLength;
+        header_.pData = buf;
         
         return OK;
     }

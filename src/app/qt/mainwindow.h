@@ -26,9 +26,11 @@ private slots:
 private:
     Ui::MainWindow *ui;
     AVD::Flv flv_;
+    std::vector<char> hexBuf_;
     
 private:
     void showFlv();
+    void showHex(int idx);
     void setFlvTableHeader();
 };
 
