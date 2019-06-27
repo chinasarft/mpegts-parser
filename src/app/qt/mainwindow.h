@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include <memory>
 #include <flv/flvparser.h>
+#include <QHexView/qhexview.h>
 
 namespace Ui {
 class MainWindow;
@@ -26,7 +27,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     AVD::Flv flv_;
-    std::vector<char> hexBuf_;
+    QHexView* hexView_;
     
 private:
     void showFlv();

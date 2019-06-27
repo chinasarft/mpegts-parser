@@ -32,13 +32,17 @@ include_directories("${TOP_DIR}/src/")
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
+add_subdirectory(QHexView)
+
 set(header_files
 	mainwindow.h
+	${QHEXVIEW_HEADERS}
 )
 
 set(source_files
-	mainwindow.cpp
 	main.cpp
+	mainwindow.cpp
+	${QHEXVIEW_SOURCES}
 )
 
 set(qt_UI

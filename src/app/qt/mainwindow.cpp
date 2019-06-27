@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <tools/hexprint.h>
 
+#include <QHexView/document/buffer/qmemorybuffer.h>
+
 #include <iostream>
 
 static const char* typeNameMap[11] = {"audio", "video", "unknown", "unknown", "unknown", "unknown"
@@ -17,7 +19,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->tableView->verticalHeader()->setHidden(true); // 隐藏行号
-    ui->textEdit->setReadOnly(true);
+    
+    QHexDocument* document = QHexDocument::fromMemory<QMemoryBuffer>("", 0);
+    hexView_ = new QHexView();
+    hexView_->setDocument(document);
+    ui->splitter->addWidget(hexView_);
 
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setSelectionMode( QAbstractItemView::SingleSelection);
@@ -125,8 +131,8 @@ void MainWindow::showFlv() {
         model->setItem(count, 0, new QStandardItem(QString::number(count)));
         model->setItem(count, 1, new QStandardItem(typeNameMap[tags[i].TagType-8]));
         model->setItem(count, 2, new QStandardItem(QString::number(tags[i].Timestamp)));
-        model->setItem(count, 3, new QStandardItem(QString::number(tags[i].DataSize)));
-        model->setItem(count, 4, new QStandardItem(QString::number(tags[i].Pos.nOffset)));
+        model->setItem(count, 3, new QStandardItem(QString::number(tags[i].Pos.nOffset)));
+        model->setItem(count, 4, new QStandardItem(QString::number(tags[i].DataSize)));
         model->setItem(count, 5, new QStandardItem(QString::number(tags[i].PreviousTagSize)));
 
         model->setData(model->index(count, 0), QVariant::fromValue(reinterpret_cast<void*>(count)), Qt::UserRole);
@@ -148,14 +154,13 @@ void MainWindow::showHex(int idx) {
         nDataLen = tags[idx-1].Pos.nSize;
     }
     
-    int nBufferSize = AVD::HexSprintBufferSize(nDataLen);
+   
+    QByteArray barr((const char*)pData, nDataLen);
+    QHexDocument* doc = hexView_->document();
+    if (doc->canUndo())
+        doc->undo();
     
-    if (hexBuf_.size() <= nBufferSize) {
-        hexBuf_.resize(nBufferSize+1024*10);
-    }
+    doc->insert(0, barr);
     
-    AVD::HexSprint((char *)pData, nDataLen, hexBuf_.data());
-    //ui->textEdit->clear();
-    ui->textEdit->setPlainText(hexBuf_.data());
     return;
 }

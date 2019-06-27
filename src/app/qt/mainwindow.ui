@@ -51,7 +51,6 @@
          </property>
          <widget class="QTableView" name="tableView"/>
          <widget class="QTreeView" name="treeView"/>
-         <widget class="QTextEdit" name="textEdit"/>
         </widget>
        </item>
       </layout>
