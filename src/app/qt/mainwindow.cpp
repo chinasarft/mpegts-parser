@@ -67,6 +67,21 @@ void MainWindow::setFlvTableHeader() {
     }
 }
 
+void MainWindow::setFlvTreeHeader() {
+    
+    auto model = dynamic_cast<QStandardItemModel*>(ui->treeView->model());
+    bool shouldAdd = false;
+    if (model == nullptr) {
+        model = new QStandardItemModel(this);
+        shouldAdd = true;
+    }
+    if (shouldAdd) {
+        ui->treeView->setModel(model);
+    }
+    model->clear();
+    model->setHorizontalHeaderLabels(QStringList()<<QStringLiteral("name") << QStringLiteral("value"));
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -98,12 +113,10 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_tableView_clicked(const QModelIndex &index)
 {
-    ui->treeView->reset();
-    
     auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
     auto v = model->data(index.siblingAtColumn(0), Qt::UserRole);
     
-    showHex(index.row());
+    showItem(index.row());
     qDebug()<<index<<"=="<<index.row()<<"---"<<v.value<void *>();
 }
 
@@ -116,6 +129,7 @@ void MainWindow::showFlv() {
     auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
     model->clear();
     setFlvTableHeader();
+    
     
     model->setItem(count, 0, new QStandardItem(QString::number(count)));
     model->setItem(count, 1, new QStandardItem("header"));
@@ -141,20 +155,88 @@ void MainWindow::showFlv() {
     }
 }
 
-void MainWindow::showHex(int idx) {
+
+void MainWindow::showItem(int idx) {
+    
     auto flv = flv_.GetFlv();
     uint8_t* pData = NULL;
     int nDataLen = 0;
     if (idx == 0) {
         pData = flv.first->pData;
         nDataLen = flv.first->Pos.nSize;
+        showFlvHeader(flv.first);
     } else {
         auto tags = flv.second;
         pData = tags[idx-1].pData;
         nDataLen = tags[idx-1].Pos.nSize;
+        showFlvTag(&tags[idx-1]);
     }
     
-   
+    showItemHex(pData, nDataLen);
+    return;
+}
+
+void MainWindow::showFlvHeader(const AVD::FlvHeader* pHdr) {
+    
+    setFlvTreeHeader();
+    auto model = dynamic_cast<QStandardItemModel*>(ui->treeView->model());
+    
+    QList<QStandardItem*> root;
+    QStandardItem* item1 = new QStandardItem(QStringLiteral("Signature"));
+    std::string sig((const char*)pHdr->Signature, 3);
+    QStandardItem* item2 = new QStandardItem(QString::fromStdString(sig));
+    root.append(item1);
+    root.append(item2);
+    model->appendRow(root);
+    
+    const char *names[] = {"Version", "TypeFlagsReserved1", "TypeFlagsAudio", "TypeFlagsReserved2",
+        "TypeFlagsVideo", "DataOffset", "PreviousTagSize"};
+    uint32_t vs[] = {pHdr->Version, pHdr->TypeFlagsReserved1, pHdr->TypeFlagsAudio, pHdr->TypeFlagsReserved2,
+        pHdr->TypeFlagsVideo, pHdr->DataOffset, pHdr->PreviousTagSize};
+    
+    for (int i = 0; i < sizeof(vs)/sizeof(uint32_t); i++) {
+        QList<QStandardItem*> root;
+        item1 = new QStandardItem(names[i]);
+        item2 = new QStandardItem(QString::number(vs[i]));
+        root.append(item1);
+        root.append(item2);
+        model->appendRow(root);
+    }
+}
+
+void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
+    
+    setFlvTreeHeader();
+    auto model = dynamic_cast<QStandardItemModel*>(ui->treeView->model());
+    
+    QString typeStr("8-audio");
+    if (pTag->TagType == 9) {
+        typeStr = "9-video";
+    } else if (pTag->TagType == 18) {
+        typeStr = "18-script";
+    }
+    const char *names[] = {"DataSize", "Timestamp", "StreamID", "PreviousTagSize"};
+    uint32_t vs[] = {pTag->DataSize, pTag->Timestamp, pTag->StreamID, pTag->PreviousTagSize};
+    
+    QList<QStandardItem*> root;
+    QStandardItem* item1 = new QStandardItem(QStringLiteral("TagType"));
+    QStandardItem* item2 = new QStandardItem(typeStr);
+    root.append(item1);
+    root.append(item2);
+    model->appendRow(root);
+    
+    for (int i = 0; i < sizeof(vs)/sizeof(uint32_t); i++) {
+        QList<QStandardItem*> root;
+        item1 = new QStandardItem(names[i]);
+        item2 = new QStandardItem(QString::number(vs[i]));
+        root.append(item1);
+        root.append(item2);
+        model->appendRow(root);
+    }
+}
+
+void  MainWindow::showItemHex(uint8_t* pData, int nDataLen) {
+
     QByteArray barr((const char*)pData, nDataLen);
     QHexDocument* doc = hexView_->document();
     if (doc->canUndo())

@@ -31,8 +31,12 @@ private:
     
 private:
     void showFlv();
-    void showHex(int idx);
+    void showItem(int idx);
+    void showFlvHeader(const AVD::FlvHeader* pHdr);
+    void showFlvTag(AVD::FlvTag* pTag);
+    void showItemHex(uint8_t* pData, int nDataLen);
     void setFlvTableHeader();
+    void setFlvTreeHeader();
 };
 
 #endif // MAINWINDOW_H
