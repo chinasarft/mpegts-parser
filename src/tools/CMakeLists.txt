@@ -10,6 +10,10 @@ add_library(tools STATIC
 	parsesps.cpp
 	hexprint.cpp
 	hexprint.h
+	AVCDecoderConfigurationRecord.cpp
+	AVCDecoderConfigurationRecord.h
+	HEVCDecoderConfigurationRecord.h
+	HEVCDecoderConfigurationRecord.cpp
 )
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -25,13 +29,13 @@ else()
 endif()
 
 #-------test
-add_executable(testsps test_sps.cpp)
-target_compile_options(testsps PRIVATE "-std=c++11")
-target_include_directories(testsps 
+add_executable(test_parse test_parse.cpp)
+target_compile_options(test_parse PRIVATE "-std=c++11")
+target_include_directories(test_parse 
 	PRIVATE
 	"${CMAKE_BINARY_DIR}/third_party/googletest/googletest/include"
 	"${CMAKE_BINARY_DIR}/third_party/googletest/googlemock/include"
 	)
-target_link_directories(testsps PRIVATE "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}")
-target_link_libraries(testsps gtest gmock_main tools)
-add_test(NAME testcase COMMAND testsps)
+target_link_directories(test_parse PRIVATE "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}")
+target_link_libraries(test_parse gtest gmock_main tools)
+add_test(NAME testcase COMMAND test_parse)

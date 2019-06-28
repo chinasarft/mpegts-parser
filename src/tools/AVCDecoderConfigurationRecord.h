@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 namespace AVD {
 
@@ -12,7 +13,7 @@ namespace AVD {
     };
     struct AVCPictureParameterSet {
         uint16_t pictureParameterSetLength;
-        uint8_t* PictureParameterSet;
+        uint8_t* pictureParameterSetNALUnit;
     };
     /*
     aligned(8) class AVCDecoderConfigurationRecord {
@@ -48,6 +49,8 @@ namespace AVD {
         uint8_t numOfPictureParameterSets;
         std::vector<AVCPictureParameterSet> pps;
     };
+    
+    std::pair<std::shared_ptr<AVCDecoderConfigurationRecord>, int> ParseAVCDecoderConfigurationRecord(uint8_t* pData, int nDataLen);
 }
 
 #endif

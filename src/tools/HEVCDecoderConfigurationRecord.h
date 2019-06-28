@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 namespace AVD {
 
@@ -11,12 +12,12 @@ namespace AVD {
         uint8_t* nalUnit;
     };
 
-    struct HEVCDecoderConfigurationRecordArray {
+    struct HEVCMetaArray {
             uint8_t array_completeness:1;
             uint8_t  reserved:1; // = 0 
             uint8_t NAL_unit_type:6;
             uint16_t numNalus;
-            std::vector<HEVCDecoderConfigurationRecordNalUnit> units;
+            HEVCDecoderConfigurationRecordNalUnit unit;
     };
 
     struct HEVCDecoderConfigurationRecord {
@@ -69,11 +70,11 @@ namespace AVD {
         uint16_t min_spatial_segmentation_idc:12;
         uint8_t reserved2:6;
         uint8_t parallelismType:2;
-        uint8_t reserved2:6;
+        uint8_t reserved3:6;
         uint8_t chromaFormat:2;
-        uint8_t reserved3:5;
+        uint8_t reserved4:5;
         uint8_t bitDepthLumaMinus8:3;
-        uint8_t reserved:5;
+        uint8_t reserved5:5;
         uint8_t bitDepthChromaMinus8:3;
 
         uint16_t avgFrameRate;
@@ -82,8 +83,10 @@ namespace AVD {
         uint8_t temporalIdNested:1;
         uint8_t lengthSizeMinusOne:2;
         uint8_t numOfArrays;
-        HEVCDecoderConfigurationRecordArray arrays;
+        std::vector<HEVCMetaArray> arrays;
     };
+    
+    std::pair<std::shared_ptr<HEVCDecoderConfigurationRecord>, int> ParseHEVCDecoderConfigurationRecord(uint8_t* pData, int nDataLen);
 }
 
 #endif
