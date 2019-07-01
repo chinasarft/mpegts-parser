@@ -7,3 +7,4 @@
 
 cmake:
 cmake -DCMAKE_INSTALL_LIBDIR=/dir
+cmake -DQTDIR=/Users/liuye/Qt5.12.0/5.12.0/clang_64 -DCMAKE_BUILD_TYPE=Debug  -G Xcode ..

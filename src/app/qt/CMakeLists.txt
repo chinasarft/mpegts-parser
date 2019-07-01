@@ -36,12 +36,14 @@ add_subdirectory(QHexView)
 
 set(header_files
 	mainwindow.h
+	treedisplay.h
 	${QHEXVIEW_HEADERS}
 )
 
 set(source_files
 	main.cpp
 	mainwindow.cpp
+	treedisplay.cpp
 	${QHEXVIEW_SOURCES}
 )
 

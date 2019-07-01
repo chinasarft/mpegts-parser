@@ -36,6 +36,7 @@ namespace AVD {
         static const int WRONG_SIG = -101;
         static const int NO_SUCH_TYPE = -102;
         static const int READ_EOF = -103;
+        static const int NOT_VIDEO_SEQ = -104;
         
         static const int FlvHeaderLength = 9;
         static const int FlvTagHeaderLength = 11;
@@ -63,7 +64,7 @@ namespace AVD {
         int Parse(Reader* pReader, int nMaxHandleSize=30*1024*1024);
         void Print();
         std::pair<const FlvHeader*, const std::vector<FlvTag> > GetFlv();
-        
+        std::pair<const uint8_t*, int>GetSps(FlvTag *pTag);
         
     private:
         std::pair<uint8_t*, int> read(Reader* r, int nLen);

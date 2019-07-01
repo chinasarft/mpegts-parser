@@ -26,18 +26,18 @@ seq_parameter_set_data( ) {
         chroma_format_idc 0 ue(v)
         if( chroma_format_idc == 3 )
             separate_colour_plane_flag 0 u(1)
-            bit_depth_luma_minus8 0 ue(v)
-            bit_depth_chroma_minus8 0 ue(v)
-            qpprime_y_zero_transform_bypass_flag 0 u(1)
-            seq_scaling_matrix_present_flag 0 u(1)
-            if( seq_scaling_matrix_present_flag )
-                for(i=0;i<((chroma_format_idc != 3)?8:12);i++){
-                    seq_scaling_list_present_flag[ i ] 0 u(1)
-                    if( seq_scaling_list_present_flag[ i ] )
-                        if( i < 6 )
-                            scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ]) 0
-                        else
-                            scaling_list( ScalingList8x8[ i − 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i − 6 ] ) 0
+        bit_depth_luma_minus8 0 ue(v)
+        bit_depth_chroma_minus8 0 ue(v)
+        qpprime_y_zero_transform_bypass_flag 0 u(1)
+        seq_scaling_matrix_present_flag 0 u(1)
+        if( seq_scaling_matrix_present_flag )
+            for(i=0;i<((chroma_format_idc != 3)?8:12);i++) {
+                seq_scaling_list_present_flag[ i ] 0 u(1)
+                if( seq_scaling_list_present_flag[ i ] )
+                    if( i < 6 )
+                        scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ]) 0
+                    else
+                        scaling_list( ScalingList8x8[ i − 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i − 6 ] ) 0
                 }
     }
     log2_max_frame_num_minus4 0 ue(v)

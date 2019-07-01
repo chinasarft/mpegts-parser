@@ -4,6 +4,8 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <tools/hexprint.h>
+#include <tools/AVCDecoderConfigurationRecord.h>
+#include "treedisplay.h"
 
 #include <QHexView/document/buffer/qmemorybuffer.h>
 
@@ -26,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setSelectionMode( QAbstractItemView::SingleSelection);
     ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    
+    ui->treeView->header()->setSectionResizeMode(QHeaderView::Stretch); // treeview 自适应宽度
     
     createFileMenu();
 }
@@ -58,6 +62,7 @@ void MainWindow::openFile() {
     }
     int ret = 0;
     if ((ret = flv_.Parse(fileReader, 10*1024*1024)) == AVD::Flv::OK) {
+        setWindowTitle(fileName);
         showFlv();
     } else {
         printf("flv parse error:%d\n", ret);
@@ -198,6 +203,8 @@ void MainWindow::showFlvHeader(const AVD::FlvHeader* pHdr) {
     root.append(item2);
     model->appendRow(root);
     
+    //item1->appendRow(<#const QList<QStandardItem *> &aitems#>)
+    
     const char *names[] = {"Version", "TypeFlagsReserved1", "TypeFlagsAudio", "TypeFlagsReserved2",
         "TypeFlagsVideo", "DataOffset", "PreviousTagSize"};
     uint32_t vs[] = {pHdr->Version, pHdr->TypeFlagsReserved1, pHdr->TypeFlagsAudio, pHdr->TypeFlagsReserved2,
@@ -241,6 +248,17 @@ void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
         root.append(item1);
         root.append(item2);
         model->appendRow(root);
+    }
+    if (pTag->TagType == 9 && pTag->pData[1] == 0) {
+        root.clear();
+        item1 = new QStandardItem(QStringLiteral("AVC sequence header"));
+        root.append(item1);
+        model->appendRow(root);
+        
+        auto seqret = AVD::ParseAVCDecoderConfigurationRecord(&pTag->pData[5], pTag->Pos.nSize - AVD::Flv::FlvTagHeaderLength - 5);
+        
+        if (seqret.second == 0)
+            AVD::ShowTreeViewOfAVCDecoderConfigurationRecord(item1, seqret.first.get());
     }
 }
 

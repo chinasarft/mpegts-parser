@@ -50,6 +50,26 @@ TEST(TestSps, pasreSps)
     ASSERT_EQ((sps->Pic_height_in_map_units_minus1+1)*16, 288);
 }
 
+TEST(TestSps2, pasreSps2)
+{
+    const char *p = "640020acd940c029b011000003000100000300320f183196";
+    //const char *p = "640020acd940c029b01100000001000000320f183196";
+    int strLen = strlen(p);
+    uint8_t bin[128];
+    int binLen = hexstr2bin((char *)p, (char *)bin, strLen);
+    ASSERT_EQ(binLen, strLen/2);
+    
+    auto pair = AVD::ParseSps(bin, binLen);
+    ASSERT_EQ(pair.second, 0);
+    
+    AVD::SPS* sps = pair.first;
+    ASSERT_EQ((sps->Pic_width_in_mbs_minus1+1)*16, 768);
+    
+    ASSERT_EQ((sps->Pic_height_in_map_units_minus1+1)*16, 320);
+}
+
+
+
 TEST(TestAVCseqhdr, parse264seqhdr)
 {
     const char *p = "0142c015ffe1001c6742c015d901e096ffc0040003c4000003000400000300c83c58b92001000568cb83cb20";

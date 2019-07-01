@@ -212,6 +212,17 @@ namespace AVD {
         return std::make_pair(&header_, tags_);
     }
     
+    std::pair<const uint8_t*, int> Flv::GetSps(FlvTag *pTag) {
+        if (pTag == nullptr || pTag->TagType != 9 || pTag->pData == nullptr) { //video
+            return std::make_pair(nullptr, NOT_VIDEO_SEQ);
+        }
+        if (pTag->pData[1] != 0) {
+            return std::make_pair(nullptr, NOT_VIDEO_SEQ);
+        }
+        return std::make_pair(nullptr, NOT_VIDEO_SEQ);
+        
+    }
+    
     void Flv::Print() {
         printf("HEADER: sig:%c%c%c versoin:%u vflag:%u aflag:%u offset:%u first plen=%d\n", header_.Signature[0], header_.Signature[1], header_.Signature[2],
                header_.Version, header_.TypeFlagsVideo, header_.TypeFlagsAudio, header_.DataOffset, header_.PreviousTagSize);

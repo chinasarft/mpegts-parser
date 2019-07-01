@@ -57,7 +57,34 @@ namespace AVD {
         return 0;
     }
     
-    std::pair<SPS*, int> ParseSps(uint8_t* pData, int nDataLen) {
+    static void kickout000003(std::vector<uint8_t>& data, uint8_t* pData, int nDataLen) {
+        
+        data.resize(nDataLen);
+        memcpy(data.data(), pData, nDataLen);
+        uint8_t kickout[3] = {0, 0, 3};
+        
+        int j=0;
+        uint8_t* tmp_ptr=data.data();
+        int tmp_buf_size=nDataLen;
+        
+        for(int i=0;i<(tmp_buf_size-2);i++) {
+            if(memcmp(tmp_ptr, kickout, 3) == 0) {
+                for(j=i+2;j<tmp_buf_size-1;j++)
+                    tmp_ptr[j]=tmp_ptr[j+1];
+                nDataLen--;
+            }
+        }
+        data.resize(nDataLen);
+        return;
+    }
+    
+    std::pair<SPS*, int> ParseSps(uint8_t* _pData, int _nDataLen) {
+        std::vector<uint8_t> data;
+        kickout000003(data, _pData, _nDataLen);
+        
+        uint8_t* pData = data.data();
+        int nDataLen = data.size();
+        
         BitReader br;
         InitBitReader(&br, pData, nDataLen);
         
@@ -69,6 +96,7 @@ namespace AVD {
         sps->Constraint_set2_flag = GetBits(&br, 1);
         sps->Constraint_set3_flag = GetBits(&br, 1);
         sps->Constraint_set4_flag = GetBits(&br, 1);
+        sps->Constraint_set5_flag = GetBits(&br, 1);
         sps->Reserved_zero_2bits = GetBits(&br, 2);
         sps->Level_idc = GetBits(&br, 8);
         
@@ -230,41 +258,42 @@ namespace AVD {
         pie->Chroma_format_idc = ue;
         if (pie->Chroma_format_idc == 3) {
             pie->Separate_colour_plane_flag = GetBits(r, 1);
-            
-            ret = unsignedGolomb(r, &ue);
-            if (ret != 0) {
-                return ret;
-            }
-            pie->Bit_depth_luma_minus8 = ue;
-            
-            ret = unsignedGolomb(r, &ue);
-            if (ret != 0) {
-                return ret;
-            }
-            pie->Bit_depth_chroma_minus8 = ue;
-            
-            pie->Qpprime_y_zero_transform_bypass_flag = GetBits(r, 1);
-            pie->Seq_scaling_matrix_present_flag = GetBits(r, 1);
-            if (pie->Seq_scaling_matrix_present_flag) {
-                for (int i = 0; (pie->Chroma_format_idc != 3)?8:12; i++) {
-                    SeqScalingMatrix matrix;
-                    matrix.Seq_scaling_list_present_flag = GetBits(r, 1);
-                    
-                    if (matrix.Seq_scaling_list_present_flag) {
-                        if (i < 6) {
-                            for (int j = 0; j < 16; j++) {
-                                matrix.ScalingList4x4[i].Delta_scale[j] = GetBits(r, 8);
-                            }
-                        } else {
-                            for (int j = 0; j < 64; j++) {
-                                matrix.ScalingList8x8[i-6].Delta_scale[j] = GetBits(r, 8);
-                            }
+        }
+        
+        ret = unsignedGolomb(r, &ue);
+        if (ret != 0) {
+            return ret;
+        }
+        pie->Bit_depth_luma_minus8 = ue;
+        
+        ret = unsignedGolomb(r, &ue);
+        if (ret != 0) {
+            return ret;
+        }
+        pie->Bit_depth_chroma_minus8 = ue;
+        
+        pie->Qpprime_y_zero_transform_bypass_flag = GetBits(r, 1);
+        pie->Seq_scaling_matrix_present_flag = GetBits(r, 1);
+        if (pie->Seq_scaling_matrix_present_flag) {
+            for (int i = 0; (pie->Chroma_format_idc != 3)?8:12; i++) {
+                SeqScalingMatrix matrix;
+                matrix.Seq_scaling_list_present_flag = GetBits(r, 1);
+                
+                if (matrix.Seq_scaling_list_present_flag) {
+                    if (i < 6) {
+                        for (int j = 0; j < 16; j++) {
+                            matrix.ScalingList4x4[i].Delta_scale[j] = GetBits(r, 8);
+                        }
+                    } else {
+                        for (int j = 0; j < 64; j++) {
+                            matrix.ScalingList8x8[i-6].Delta_scale[j] = GetBits(r, 8);
                         }
                     }
-                    pie->Matrix.push_back(matrix);
                 }
+                pie->Matrix.push_back(matrix);
             }
         }
+        
         if (IsOverFlow(r)) {
             return SPS::GolombError;
         }
