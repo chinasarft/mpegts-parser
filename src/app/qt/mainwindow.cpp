@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <tools/hexprint.h>
 #include <tools/AVCDecoderConfigurationRecord.h>
+#include <tools/audioinfo.h>
 #include "treedisplay.h"
 
 #include <QHexView/document/buffer/qmemorybuffer.h>
@@ -249,16 +250,28 @@ void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
         root.append(item2);
         model->appendRow(root);
     }
-    if (pTag->TagType == 9 && pTag->pData[1] == 0) {
-        root.clear();
-        item1 = new QStandardItem(QStringLiteral("AVC sequence header"));
-        root.append(item1);
-        model->appendRow(root);
-        
-        auto seqret = AVD::ParseAVCDecoderConfigurationRecord(&pTag->pData[5], pTag->Pos.nSize - AVD::Flv::FlvTagHeaderLength - 5);
-        
-        if (seqret.second == 0)
-            AVD::ShowTreeViewOfAVCDecoderConfigurationRecord(item1, seqret.first.get());
+    if (pTag->pData[1] == 0) {
+        if (pTag->TagType == 9) {
+            root.clear();
+            item1 = new QStandardItem(QStringLiteral("AVC sequence header"));
+            root.append(item1);
+            model->appendRow(root);
+            
+            auto seqret = AVD::ParseAVCDecoderConfigurationRecord(&pTag->pData[5], pTag->Pos.nSize - AVD::Flv::FlvTagHeaderLength - 5);
+            
+            if (seqret.second == 0)
+                ShowTreeViewOfAVCDecoderConfigurationRecord(item1, seqret.first.get());
+        } else if (pTag->TagType == 8) {
+            root.clear();
+            item1 = new QStandardItem(QStringLiteral("AudioSpecificConfig"));
+            root.append(item1);
+            model->appendRow(root);
+            
+            auto seqret = AVD::ParseAudioSpecificConfig(&pTag->pData[2], pTag->Pos.nSize - AVD::Flv::FlvTagHeaderLength - 2);
+            
+            if (seqret.second == 0)
+                ShowTreeViewOfAudioSpecificConfig(item1, seqret.first.get());
+        }
     }
 }
 

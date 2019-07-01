@@ -14,6 +14,8 @@ add_library(tools STATIC
 	AVCDecoderConfigurationRecord.h
 	HEVCDecoderConfigurationRecord.h
 	HEVCDecoderConfigurationRecord.cpp
+	audioinfo.h
+	audioinfo.cpp
 )
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
