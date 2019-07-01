@@ -20,16 +20,48 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->tableView->verticalHeader()->setHidden(true); // 隐藏行号
     
-    QHexDocument* document = QHexDocument::fromMemory<QMemoryBuffer>("", 0);
     hexView_ = new QHexView();
-    hexView_->setDocument(document);
     ui->splitter->addWidget(hexView_);
 
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setSelectionMode( QAbstractItemView::SingleSelection);
     ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    
+    createFileMenu();
+}
 
-    setFlvTableHeader();
+void MainWindow::createFileMenu() {
+    pFileMenu_ = new QMenu("file");
+    pOpenAct_ = new QAction("open", this);
+    pOpenAct_->setShortcut(Qt::CTRL | Qt::Key_O );
+    pFileMenu_->addAction(pOpenAct_);
+    connect(pOpenAct_, &QAction::triggered, this, &MainWindow::openFile);
+    
+    ui->menuBar->addMenu(pFileMenu_);
+}
+
+void MainWindow::openFile() {
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("select a media file"),
+                                                    ".");
+    
+    if (fileName.isEmpty()) {
+        return;
+    }
+    
+    std::string fname = fileName.toStdString();
+    auto fileReader = AVD::Flv::FileReader::NewFileReader(fname);
+    if (!fileReader->IsOk()) {
+        QMessageBox::information(NULL, "notify", "open" + fileName + "fail",
+                                 QMessageBox::Yes);
+        return;
+    }
+    int ret = 0;
+    if ((ret = flv_.Parse(fileReader, 10*1024*1024)) == AVD::Flv::OK) {
+        showFlv();
+    } else {
+        printf("flv parse error:%d\n", ret);
+    }
 }
 
 void MainWindow::setFlvTableHeader() {
@@ -40,6 +72,7 @@ void MainWindow::setFlvTableHeader() {
         model = new QStandardItemModel(this);
         shouldAdd = true;
     }
+    model->clear();
 #if 1
     model->setColumnCount(6);
     model->setHeaderData(0,Qt::Horizontal, "NO.");
@@ -87,30 +120,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
-{
-    QString fileName = QFileDialog::getOpenFileName(this,
-                                                          tr("文件对话框！"),
-                                                          ".");
-    ui->textEdit_2->setText(fileName);
-    
-    
-    std::string fname = fileName.toStdString();
-    auto fileReader = AVD::Flv::FileReader::NewFileReader(fname);
-    if (!fileReader->IsOk()) {
-        QMessageBox::information(NULL, "notify", "open" + fileName + "fail",
-                                 QMessageBox::Yes);
-        return;
-    }
-    int ret = 0;
-    if ((ret = flv_.Parse(fileReader, 10*1024*1024)) == AVD::Flv::OK) {
-        showFlv();
-    } else {
-        printf("flv parse error:%d\n", ret);
-    }
-    
-}
-
 void MainWindow::on_tableView_clicked(const QModelIndex &index)
 {
     auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
@@ -126,9 +135,9 @@ void MainWindow::showFlv() {
     
     auto flv = flv_.GetFlv();
     
-    auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
-    model->clear();
     setFlvTableHeader();
+    
+    auto model = dynamic_cast<QStandardItemModel*>(ui->tableView->model());
     
     
     model->setItem(count, 0, new QStandardItem(QString::number(count)));
@@ -237,11 +246,15 @@ void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
 
 void  MainWindow::showItemHex(uint8_t* pData, int nDataLen) {
 
-    QByteArray barr((const char*)pData, nDataLen);
     QHexDocument* doc = hexView_->document();
+    if (doc == nullptr) {
+        doc = QHexDocument::fromMemory<QMemoryBuffer>("", 0);
+        hexView_->setDocument(doc);
+    }
     if (doc->canUndo())
         doc->undo();
     
+    QByteArray barr((const char*)pData, nDataLen);
     doc->insert(0, barr);
     
     return;

@@ -20,7 +20,6 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_clicked();
 
     void on_tableView_clicked(const QModelIndex &index);
 
@@ -37,6 +36,19 @@ private:
     void showItemHex(uint8_t* pData, int nDataLen);
     void setFlvTableHeader();
     void setFlvTreeHeader();
+   
+// start of menu bar
+private:
+    QMenu *pFileMenu_;
+    QAction *pOpenAct_;
+    
+private:
+    void createFileMenu();
+    
+private slots:
+    void openFile();
+//end of menu bar
+    
 };
 
 #endif // MAINWINDOW_H
