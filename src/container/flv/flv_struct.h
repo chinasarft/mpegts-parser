@@ -80,7 +80,7 @@ namespace AVD {
                                    // This field represents the upper 8 bits, 
                                    // while the previous Timestamp field represents the lower 24 bits of the time in milliseconds
         int32_t CompositionTime;
-        uint32_t Dts;
+        uint32_t Pts;
         uint32_t StreamID; // Always 0.
         // EncryptionHeader // if  Filter == 1
         // FilterParams  // if  Filter == 1

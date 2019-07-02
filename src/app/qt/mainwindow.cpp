@@ -80,7 +80,7 @@ void MainWindow::setFlvTableHeader() {
     }
     model->clear();
 #if 1
-    const char* headers[] = {"NO.", "type", "pts", "dts", "offset", "size", "ptag length"};
+    const char* headers[] = {"NO.", "type", "dts", "pts", "offset", "size", "ptag length"};
     int headerLen = sizeof(headers)/sizeof(char*);
     model->setColumnCount(headerLen);
     for (int i = 0; i < headerLen; i++) {
@@ -160,7 +160,7 @@ void MainWindow::showFlv() {
         model->setItem(count, 0, new QStandardItem(QString::number(count)));
         model->setItem(count, 1, new QStandardItem(typeNameMap[tags[i].TagType-8]));
         model->setItem(count, 2, new QStandardItem(QString::number(tags[i].Timestamp)));
-        model->setItem(count, 3, new QStandardItem(QString::number(tags[i].Dts)));
+        model->setItem(count, 3, new QStandardItem(QString::number(tags[i].Pts)));
         model->setItem(count, 4, new QStandardItem(QString::number(tags[i].Pos.nOffset)));
         model->setItem(count, 5, new QStandardItem(QString::number(tags[i].DataSize)));
         model->setItem(count, 6, new QStandardItem(QString::number(tags[i].PreviousTagSize)));
@@ -235,8 +235,8 @@ void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
     }
     const char *names[] = {"DataSize", "Timestamp", "CompositionTime", "StreamID", "PreviousTagSize"};
     QString vs[] = {
-        QString::number(pTag->DataSize), QString("%1(pts)").arg(pTag->Timestamp),
-        QString("%1 | dts:%2(calc)").arg(pTag->CompositionTime).arg(pTag->Dts),
+        QString::number(pTag->DataSize), QString("%1(dts)").arg(pTag->Timestamp),
+        QString("%1 | pts:%2(calc)").arg(pTag->CompositionTime).arg(pTag->Pts),
         QString::number(pTag->StreamID), QString::number(pTag->PreviousTagSize)
     };
     
