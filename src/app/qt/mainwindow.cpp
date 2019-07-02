@@ -80,13 +80,12 @@ void MainWindow::setFlvTableHeader() {
     }
     model->clear();
 #if 1
-    model->setColumnCount(6);
-    model->setHeaderData(0,Qt::Horizontal, "NO.");
-    model->setHeaderData(1,Qt::Horizontal, "type");
-    model->setHeaderData(2,Qt::Horizontal, "pts");
-    model->setHeaderData(3,Qt::Horizontal, "offset");
-    model->setHeaderData(4,Qt::Horizontal, "size");
-    model->setHeaderData(5,Qt::Horizontal, "ptag length");
+    const char* headers[] = {"NO.", "type", "pts", "dts", "offset", "size", "ptag length"};
+    int headerLen = sizeof(headers)/sizeof(char*);
+    model->setColumnCount(headerLen);
+    for (int i = 0; i < headerLen; i++) {
+        model->setHeaderData(i,Qt::Horizontal, headers[i]);
+    }
 #else
     model->setColumnCount(3);
     model->setHeaderData(0,Qt::Horizontal, "姓名");
@@ -148,10 +147,11 @@ void MainWindow::showFlv() {
     
     model->setItem(count, 0, new QStandardItem(QString::number(count)));
     model->setItem(count, 1, new QStandardItem("header"));
-    model->setItem(count, 2, new QStandardItem("0"));
-    model->setItem(count, 3, new QStandardItem(QString::number(flv.first->Pos.nOffset)));
-    model->setItem(count, 4, new QStandardItem("9"));
-    model->setItem(count, 5, new QStandardItem(QString::number(flv.first->PreviousTagSize)));
+    model->setItem(count, 2, new QStandardItem("/"));
+    model->setItem(count, 3, new QStandardItem("/"));
+    model->setItem(count, 4, new QStandardItem(QString::number(flv.first->Pos.nOffset)));
+    model->setItem(count, 5, new QStandardItem("9"));
+    model->setItem(count, 6, new QStandardItem(QString::number(flv.first->PreviousTagSize)));
     model->setData(model->index(count, 0), QVariant::fromValue(reinterpret_cast<void*>(count)), Qt::UserRole);
 
     count++;
@@ -160,9 +160,10 @@ void MainWindow::showFlv() {
         model->setItem(count, 0, new QStandardItem(QString::number(count)));
         model->setItem(count, 1, new QStandardItem(typeNameMap[tags[i].TagType-8]));
         model->setItem(count, 2, new QStandardItem(QString::number(tags[i].Timestamp)));
-        model->setItem(count, 3, new QStandardItem(QString::number(tags[i].Pos.nOffset)));
-        model->setItem(count, 4, new QStandardItem(QString::number(tags[i].DataSize)));
-        model->setItem(count, 5, new QStandardItem(QString::number(tags[i].PreviousTagSize)));
+        model->setItem(count, 3, new QStandardItem(QString::number(tags[i].Dts)));
+        model->setItem(count, 4, new QStandardItem(QString::number(tags[i].Pos.nOffset)));
+        model->setItem(count, 5, new QStandardItem(QString::number(tags[i].DataSize)));
+        model->setItem(count, 6, new QStandardItem(QString::number(tags[i].PreviousTagSize)));
 
         model->setData(model->index(count, 0), QVariant::fromValue(reinterpret_cast<void*>(count)), Qt::UserRole);
         count++;
@@ -232,8 +233,12 @@ void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
     } else if (pTag->TagType == 18) {
         typeStr = "18-script";
     }
-    const char *names[] = {"DataSize", "Timestamp", "StreamID", "PreviousTagSize"};
-    uint32_t vs[] = {pTag->DataSize, pTag->Timestamp, pTag->StreamID, pTag->PreviousTagSize};
+    const char *names[] = {"DataSize", "Timestamp", "CompositionTime", "StreamID", "PreviousTagSize"};
+    QString vs[] = {
+        QString::number(pTag->DataSize), QString("%1(pts)").arg(pTag->Timestamp),
+        QString("%1 | dts:%2(calc)").arg(pTag->CompositionTime).arg(pTag->Dts),
+        QString::number(pTag->StreamID), QString::number(pTag->PreviousTagSize)
+    };
     
     QList<QStandardItem*> root;
     QStandardItem* item1 = new QStandardItem(QStringLiteral("TagType"));
@@ -242,10 +247,10 @@ void MainWindow::showFlvTag(AVD::FlvTag* pTag) {
     root.append(item2);
     model->appendRow(root);
     
-    for (int i = 0; i < sizeof(vs)/sizeof(uint32_t); i++) {
+    for (int i = 0; i < sizeof(names)/sizeof(char *); i++) {
         QList<QStandardItem*> root;
         item1 = new QStandardItem(names[i]);
-        item2 = new QStandardItem(QString::number(vs[i]));
+        item2 = new QStandardItem(vs[i]);
         root.append(item1);
         root.append(item2);
         model->appendRow(root);

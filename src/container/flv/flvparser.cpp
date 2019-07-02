@@ -7,6 +7,9 @@ static uint32_t beBuf2Uint32(uint8_t* p) {
 static uint32_t beBuf2Uint24(uint8_t* p) {
     return ((uint32_t)(p[0])<<16) | ((uint32_t)(p[1])<<8) | p[2];
 }
+static int beBuf2Int24(uint8_t* p) {
+    return ((int)(p[0])<<16) | ((int)(p[1])<<8) | (int)p[2];
+}
 
 namespace AVD {
     
@@ -200,10 +203,16 @@ namespace AVD {
         VideoTagHeader* v = &t->avHhr.v;
         v->FrameType = (buf[0] & 0xF0)>4;
         v->CodecID = buf[0] & 0x0F;
+        
+        t->CompositionTime = (beBuf2Uint24(buf+2) + 0xff800000) ^ 0xff800000;
+        int64_t pts = t->Timestamp;
+        int64_t dts = pts + t->CompositionTime;
+        t->Dts = (uint32_t)dts;
         return OK;
     }
     
     int Flv::parseScript(Reader* r, FlvTag* t, uint8_t* buf) {
+        t->Dts = 0;
         fprintf(stderr, "not support scirpt now\n");
         return OK;
     }
