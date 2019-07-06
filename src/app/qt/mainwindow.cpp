@@ -134,6 +134,26 @@ void MainWindow::on_tableView_clicked(const QModelIndex &index)
     qDebug()<<index<<"=="<<index.row()<<"---"<<v.value<void *>();
 }
 
+void MainWindow::on_treeView_clicked(const QModelIndex &index)
+{
+    // qDebug()<<model->itemData(index); // 也可以获取显示的内容
+    auto model = dynamic_cast<QStandardItemModel*>(ui->treeView->model());
+    
+    std::vector<std::string> path;
+    path.push_back(model->itemFromIndex(index)->text().toStdString());
+    
+    QModelIndex pIndex = index.parent();
+    while(pIndex.isValid()) {
+        path.insert(path.begin(), model->itemFromIndex(pIndex)->text().toStdString());
+        pIndex = pIndex.parent();
+    }
+    for (int i = 0; i < path.size(); i++) {
+        std::cout<<path[i]<<" --> ";
+    }
+    std::cout<<std::endl;
+    
+}
+
 void MainWindow::showFlv() {
     
     int count = 0;
